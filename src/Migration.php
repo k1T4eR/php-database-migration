@@ -44,10 +44,10 @@ class Migration {
         $queries = $parser->getQueries($this->_source);
 
         foreach ($queries as $query) {
-            $newV = $query->getVersion() ?: time();
+            $newV = $query->getVersion();
 
-            if ($newV > $v) {
-                $v = $newV;
+            if (!$newV || $newV > $v) {
+                $v = $newV ? : time();
 
                 $this->_dbAdapter->query($query);
                 $query->setVersion($v);

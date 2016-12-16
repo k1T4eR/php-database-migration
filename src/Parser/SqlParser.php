@@ -20,7 +20,7 @@ class SqlParser
     public function getQueries(Source\SourceInterface $source) {
         $matches = preg_split(static::$rDelimiter, $source->getContents());
 
-        return array_map(function ($match) {
+        $queries = array_map(function ($match) {
             $lines = preg_split(static::$rLinebreakDelimiter, $match);
 
             $data = ['comments' => [], 'code' => [], 'version' => 0];
@@ -38,6 +38,10 @@ class SqlParser
             $data['code'] = join(PHP_EOL, $data['code']);
             return $this->buildQuery($data);
         }, $matches);
+
+        return array_filter($queries, function(Query $query) {
+            return !!$query->getCode();
+        });
     }
 
 }
