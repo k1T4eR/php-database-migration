@@ -12,8 +12,8 @@ abstract class AbstractParser {
      */
     abstract public function getQueries(Source\SourceInterface $source);
 
-    public function buildQuery(array $data) {
-        return new Query($data);
+    protected function instantiateQuery($source, $version) {
+        return new Query($source, $version);
     }
 
 }

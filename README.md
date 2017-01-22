@@ -1,3 +1,5 @@
+TODO FULLY REFACTOR README
+
 database-migration
 ==================
 

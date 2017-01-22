@@ -2,7 +2,6 @@
 namespace DatabaseMigration\Source;
 
 interface SourceInterface {
-
     /**
      * @param string $contents
      * @return mixed
@@ -13,5 +12,4 @@ interface SourceInterface {
      * @return string
      */
     public function getContents();
-
 }

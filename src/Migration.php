@@ -1,79 +1,71 @@
 <?php
 namespace DatabaseMigration;
 
+require_once __DIR__.'/Database/AdapterInterface.php';
+require_once __DIR__.'/Parser/AbstractParser.php';
+require_once __DIR__.'/Source/SourceInterface.php';
+require_once __DIR__.'/Version/VersionInterface.php';
+require_once __DIR__.'/Query.php';
+
 class Migration {
 
-    /** @var Database\DatabaseType */
-    protected $_dbType;
-
     /** @var Database\AdapterInterface */
-    protected $_dbAdapter;
+    protected $_databaseAdapter;
 
     /** @var Source\SourceInterface */
-    protected $_source;
+    protected $_migrationSource;
 
-    /** @var Version\ProviderInterface */
-    protected $_versionProvider;
+    /** @var Version\VersionInterface */
+    protected $_migrationVersion;
 
-    /** @var Parser\ParseStrategy */
-    protected $_parseStrategy;
+    /** @var Parser\AbstractParser */
+    protected $_migrationParser;
 
-    public function setSource(Source\SourceInterface $source) {
-        $this->_source = $source;
-    }
-    
     public function setDatabaseAdapter(Database\AdapterInterface $adapter) {
-        $this->_dbAdapter = $adapter;
+        $this->_databaseAdapter = $adapter;
     }
 
-    public function setDatabaseType(Database\DatabaseType $tp) {
-        $this->_dbType = $tp;
+    public function setMigrationSource(Source\SourceInterface $source) {
+        $this->_migrationSource = $source;
     }
 
-    public function setVersionProvider(Version\ProviderInterface $provider) {
-        $this->_versionProvider = $provider;
+    public function setMigrationVersion(Version\VersionInterface $version) {
+        $this->_migrationVersion = $version;
     }
 
-    public function setParseStrategy(Parser\ParseStrategy $strategy) {
-        $this->_parseStrategy = $strategy;
+    public function setMigrationParser(Parser\AbstractParser $parser) {
+        $this->_migrationParser = $parser;
     }
 
     public function run() {
-        $v = $this->_versionProvider->getNumber();
-        $parser = $this->__getParser();
-        $queries = $parser->getQueries($this->_source);
+        $currentVersion = $this->_migrationVersion->get();
+        $queries        = $this->_migrationParser->getQueries($this->_migrationSource);
 
         foreach ($queries as $query) {
-            $newV = $query->getVersion();
+            $newVersion = $query->getVersion();
 
-            if (!$newV || $newV > $v) {
-                $v = $newV ? : time();
+            if (!$newVersion || $newVersion > $currentVersion) {
+                $currentVersion = time();
 
-                $this->_dbAdapter->query($query);
-                $query->setVersion($v);
+                echo 'Execute '.$query->getSource().PHP_EOL;
+                $this->_databaseAdapter->query($query);
+                $query->setVersion($currentVersion);
 
-                $this->__updateVersion($v);
-                $this->__updateSource($queries);
+                $this->_migrationVersion->set($currentVersion);
+
+                $this->_updateVersion($currentVersion);
+                $this->_updateSource($queries);
             }
         }
     }
 
-    protected function __updateVersion($v) {
-        $this->_versionProvider->setNumber($v);
+    protected function _updateVersion($version) {
+        $this->_migrationVersion->set($version);
     }
 
-    protected function __updateSource(array $queries) {
-        $this->_source->setContents(join("\n\n", array_map(function (Query $query) {
+    protected function _updateSource(array $queries) {
+        $this->_migrationSource->setContents(join(PHP_EOL.PHP_EOL, array_map(function(Query $query) {
             return $query->assemble();
         }, $queries)));
     }
-
-    protected function __getParser() {
-        if (!$this->_parseStrategy) {
-            $this->_parseStrategy = new Parser\ParseStrategy();
-        }
-
-        return $this->_parseStrategy->parserOf($this->_dbType);
-    }
-
 }

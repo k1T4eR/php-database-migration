@@ -1,6 +1,8 @@
 <?php
 namespace DatabaseMigration\Source;
 
+require_once __DIR__.'/SourceInterface.php';
+
 class FileSource
     implements
         SourceInterface {
@@ -17,7 +19,7 @@ class FileSource
 
     /**
      * @param string $contents
-     * @return mixed
+     * @return void
      */
     public function setContents($contents) {
         file_put_contents($this->_filename, $contents);
